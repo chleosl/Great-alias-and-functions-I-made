@@ -33,7 +33,7 @@ awk '
   }
   
   # Filter out unnecessary UI and tool usage patterns
-  /! for bash|· \/ for commands|\\\⏎ for newline|Search\(pattern:|Read\(file_path:|Bash\(|List\(|View\(|Edit\(|Update\(|mode[[:space:]]+newline/ { next; }
+  /! for bash|· \/ for commands|\\\\[ *] for newline|Search\(pattern:|Read\(file_path:|Bash\(|List\(|View\(|Edit\(|Update\(|mode[[:space:]]+newline/ { next; }
   
   # Function to check for duplicates
   function is_duplicate(line) {
