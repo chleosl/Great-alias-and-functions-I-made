@@ -1,0 +1,46 @@
+# Array of target device identifiers
+$targetDevices = @("Android")
+
+# Log start
+Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): Script started"
+
+# Get device list
+$deviceList = & usbipd list
+
+# Find matching devices for each identifier
+foreach ($target in $targetDevices) {
+    $matchingDevices = $deviceList | Select-String $target
+    
+    foreach ($device in $matchingDevices) {
+        $busid = $device -replace '.*?([\d-]+).*', '$1'
+        Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): Target device found: $busid"
+        
+        $isShared = $device -match "Shared"
+        if (-not $isShared) {
+            Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): Binding: $busid"
+            & usbipd bind --busid $busid
+        }
+        
+        Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): Attaching to WSL: $busid"
+        & usbipd attach --wsl --busid $busid
+        
+        # Check if attachment was successful
+        $attachResult = & usbipd list | Select-String $busid
+        if ($attachResult -match "Attached") {
+            Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): $target device attached successfully"
+            # Show success prompt
+            msg * "USB connection binded with WSL2"
+        } else {
+            Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): $target device attachment failed"
+            # Show failure prompt for attachment
+            msg * "USB connection failed to bind with WSL2"
+        }
+    }
+}
+
+# If no target devices are found
+if (-not ($deviceList | Select-String ($targetDevices -join "|"))) {
+    Add-Content -Path "C:\Scripts\usb_log.txt" -Value "$(Get-Date): No connectable devices found"
+    # Show failure prompt for no devices
+    msg * "USB connection failed to bind with WSL2"
+}
